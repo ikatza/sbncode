@@ -113,7 +113,7 @@ physics.producers.mycafmaker.CalorimetryConstants: @local::sbnd_calorimetryalgmc
 
 physics.producers.mycafmaker.PandoraTagSuffixes: []
 physics.producers.mycafmaker.PFParticleLabel: "pandoraSCE"
-physics.producers.mycafmaker.RecoShowerLabel: "pandoraSCEShower"
+physics.producers.mycafmaker.RecoShowerLabel: "pandoraSCEShowerSBN"
 physics.producers.mycafmaker.RecoTrackLabel: "pandoraSCETrack"
 physics.producers.mycafmaker.TrackCaloLabel: "pandoraSCECalo"
 physics.producers.mycafmaker.TrackPidLabel:  "pandoraSCEPid"
@@ -123,5 +123,5 @@ physics.producers.pandoraTrackMCS.TrackLabel: pandoraSCETrack
 physics.producers.pandoraTrackRange.TrackLabel: pandoraSCETrack
 
 physics.producers.pandoraShowerSelectionVars.PandoraLabel: "pandoraSCE"
-physics.producers.pandoraShowerSelectionVars.ShowerLabel:  "pandoraSCEShower"
+physics.producers.pandoraShowerSelectionVars.ShowerLabel:  "pandoraSCEShowerSBN"
 
