@@ -43,6 +43,7 @@
 #include "lardataobj/RecoBase/OpFlash.h"
 #include "lardataobj/AnalysisBase/T0.h"
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
+#include "nusimdata/SimulationBase/MCParticle.h"
 
 #include "TTree.h"
 #include "TF1.h"
@@ -50,6 +51,7 @@
 #include "TH1.h"
 #include "TSpline.h"
 
+#include "sbncode/CAFMaker/RecoUtils/RecoUtils.h"
 #include "sbncode/OpT0Finder/flashmatch/Base/OpT0FinderTypes.h"
 #include "sbncode/OpDet/PDMapAlg.h"
 
@@ -90,6 +92,8 @@ private:
   // art::InputTag fT0Producer; // producer for ACPT in-time anab::T0 <-> recob::Track assocaition
   void initTree(void);
   void loadMetrics(void);
+  double cheatMCT0(const std::vector<art::Ptr<recob::Hit>>& hits,
+                   const std::vector<art::Ptr<simb::MCParticle>>& mcParticles);
   bool computeChargeMetrics(const flashmatch::QCluster_t& qClusters);
   bool computeFlashMetrics(const std::set<unsigned>& tpcWithHits);
   bool computeScore(const std::set<unsigned>& tpcWithHits, const int pdgc);
@@ -148,6 +152,7 @@ private:
   const unsigned fTimeBins;
   const bool fSelectNeutrino, fUseUncoatedPMT, fUseOppVolMetric;//, fUseCalo;
   const bool fUseARAPUCAS;
+  const bool fStoreCheatMCT0;
   const std::string fInputFilename;
   const bool fNoAvailableMetrics, fMakeTree;
   const double fMinFlashPE, fMinOpHPE, fPEscale,
@@ -200,6 +205,7 @@ private:
   double _score, _scr_y, _scr_z, _scr_rr, _scr_ratio;
   double _hypo_x, _hypo_x_fit;
   unsigned _evt, _run, _sub, _slices, _countPE;
+  double _mcT0;
 
   std::vector<double> dy_means, dz_means, rr_means, pe_means;
   std::vector<double> dy_spreads, dz_spreads, rr_spreads, pe_spreads;
@@ -210,13 +216,15 @@ private:
      art::Ptr<recob::PFParticle> pfp_ptr;
      flashmatch::QCluster_t qClusters;
      std::set<unsigned> tpcWithHits;
+     double mcT0;
     ChargeDigest() = default;
     ChargeDigest(const size_t pId_, const int pfpPDGC_,
                  const art::Ptr<recob::PFParticle>& pfp_ptr_,
                  const flashmatch::QCluster_t& qClusters_,
-                 const std::set<unsigned>& tpcWithHits_) :
+                 const std::set<unsigned>& tpcWithHits_,
+                 const double mcT0_) :
       pId(pId_), pfpPDGC(pfpPDGC_), pfp_ptr(pfp_ptr_),
-      qClusters(qClusters_), tpcWithHits(tpcWithHits_)
+      qClusters(qClusters_), tpcWithHits(tpcWithHits_), mcT0(mcT0_)
       {}
   };
 

@@ -28,6 +28,7 @@ FlashPredict::FlashPredict(fhicl::ParameterSet const& p)
   , fUseUncoatedPMT(p.get<bool>("UseUncoatedPMT", false))
   , fUseOppVolMetric(p.get<bool>("UseOppVolMetric", false))
   , fUseARAPUCAS(p.get<bool>("UseARAPUCAS", false))
+  , fStoreCheatMCT0(p.get<bool>("StoreCheatMCT0", false))
   // , fUseCalo(p.get<bool>("UseCalo", false))
   , fInputFilename(p.get<std::string>("InputFileName")) // root file with score metrics
   , fNoAvailableMetrics(p.get<bool>("NoAvailableMetrics", false))
@@ -126,6 +127,7 @@ void FlashPredict::produce(art::Event & e)
   _hypo_x        = -9999.;
   _hypo_x_fit    = -9999.;
   _score         = -9999.;
+  if(fStoreCheatMCT0) _mcT0 = -9999.;
   bk.events++;
 
   // grab PFParticles in event
@@ -223,6 +225,12 @@ void FlashPredict::produce(art::Event & e)
     }
   }
 
+
+  std::vector<art::Ptr<simb::MCParticle>> mcParticles;
+  if(fStoreCheatMCT0){
+    lar_pandora::LArPandoraHelper::CollectMCParticles(e, "largeant", mcParticles);
+  }
+
   std::map<size_t, size_t> pfpMap;
   for (size_t p=0; p<pfp_h->size(); p++) pfpMap[pfp_h->at(p).Self()] = p;
 
@@ -246,6 +254,7 @@ void FlashPredict::produce(art::Event & e)
 
     double chargeToNPhotons = lar_pandora::LArPandoraHelper::IsTrack(pfp_ptr) ? fChargeToNPhotonsTrack : fChargeToNPhotonsShower;
     double totalCharge = 0;
+    std::vector<art::Ptr<recob::Hit>> hits;
     //  loop over all mothers and daughters, fill qCluster
     for (auto& pfp_md: pfp_ptr_v) {
       auto key = pfp_md.key();
@@ -284,6 +293,10 @@ void FlashPredict::produce(art::Event & e)
       for (auto& SP : spacepoint_ptr_v) {
         auto const& spkey = SP.key();
         const auto& hit_ptr_v = spacepoint_hit_assn_v.at(spkey);
+        if(fStoreCheatMCT0){
+          hits.insert(hits.end(),
+                      hit_ptr_v.begin(), hit_ptr_v.end());
+        }
         for (auto& hit : hit_ptr_v) {
           // TODO: Add hits from induction wires too.
           // Only use hits from the collection plane
@@ -299,7 +312,11 @@ void FlashPredict::produce(art::Event & e)
       } // for all spacepoints
       //      }  // if track or shower
     } // for all pfp pointers
-    chargeDigestMap[totalCharge] = ChargeDigest(pId, pfpPDGC, pfp_ptr, qClusters, tpcWithHits);
+    double mcT0 = -9999.;
+    if(fStoreCheatMCT0){
+      mcT0 = cheatMCT0(hits, mcParticles)/1000.;
+    }
+    chargeDigestMap[totalCharge] = ChargeDigest(pId, pfpPDGC, pfp_ptr, qClusters, tpcWithHits, mcT0);
     }//TODO: pack this into a function
   } // over all PFParticles
 
@@ -309,6 +326,8 @@ void FlashPredict::produce(art::Event & e)
     const auto& pfp_ptr = chargeDigest.second.pfp_ptr;
     const auto& qClusters = chargeDigest.second.qClusters;
     const auto& tpcWithHits = chargeDigest.second.tpcWithHits;
+    _mcT0 = chargeDigest.second.mcT0;
+    mf::LogDebug("FlashPredict") << "_mcT0:\t" << _mcT0;
 
     if(fSBND){// because SBND has an opaque cathode
       std::set<unsigned> tpcWithHitsOpH;
@@ -389,6 +408,7 @@ void FlashPredict::initTree(void)
   _flashmatch_nuslice_tree->Branch("scr_z", &_scr_z, "scr_z/D");
   _flashmatch_nuslice_tree->Branch("scr_rr", &_scr_rr, "scr_rr/D");
   _flashmatch_nuslice_tree->Branch("scr_ratio", &_scr_ratio, "scr_ratio/D");
+  if(fStoreCheatMCT0) _flashmatch_nuslice_tree->Branch("mcT0", &_mcT0, "mcT0/D");
 }
 
 
@@ -569,6 +589,30 @@ void FlashPredict::loadMetrics()
   infile->Close();
   delete infile;
   mf::LogInfo("FlashPredict") << "Finish loading metrics";
+}
+
+
+double FlashPredict::cheatMCT0(const std::vector<art::Ptr<recob::Hit>>& hits,
+                               const std::vector<art::Ptr<simb::MCParticle>>& mcParticles)
+{
+  auto clockData = art::ServiceHandle<detinfo::DetectorClocksService const>()->DataForJob();
+  const std::vector<std::pair<int, float>> matches =
+    CAFRecoUtils::AllTrueParticleIDEnergyMatches(clockData, hits, true);
+
+  int pidMaxEnergy = -1;
+  double maxEnergy = -10;
+  for(auto& m : matches){
+    if(m.second > maxEnergy){
+      pidMaxEnergy = m.first;
+      maxEnergy = m.second;
+    }
+  }
+  for(auto& mcp: mcParticles){
+    if(mcp->TrackId() == pidMaxEnergy){
+      return mcp->Position().T();
+    }
+  }
+  return -9999999.;
 }
 
 
