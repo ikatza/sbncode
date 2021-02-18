@@ -130,6 +130,29 @@ void FlashPredict::produce(art::Event & e)
   if(fStoreCheatMCT0) _mcT0 = -9999.;
   bk.events++;
 
+  // * MC truth information
+  art::Handle<std::vector<simb::MCTruth> > mctruthListHandle;
+  std::vector<art::Ptr<simb::MCTruth> > mclist;
+  // if (evt.getByLabel(fGenieGenModuleLabel,mctruthListHandle))
+  if (e.getByLabel("generator", mctruthListHandle))
+    art::fill_ptr_vector(mclist, mctruthListHandle);
+
+  int numTrueNu = 0;
+  for(auto const& mc: mclist){
+    //Only deal with neutrinos
+    if(mc->Origin() != simb::kBeamNeutrino){continue;}
+    ++numTrueNu;
+    // Anything else you need to do with truth at this stage...
+  }
+  if (numTrueNu > 1) {
+    mf::LogWarning("FlashPredict") << "\t numTrueNu:\t" << numTrueNu << ". Skipping.";
+    bk.noslice++;
+    updateBookKeeping();
+    e.put(std::move(T0_v));
+    e.put(std::move(pfp_t0_assn_v));
+    return;
+  }
+
   // grab PFParticles in event
   auto const& pfp_h = e.getValidHandle<std::vector<recob::PFParticle>>(fPandoraProducer);
   if (fSelectNeutrino &&
