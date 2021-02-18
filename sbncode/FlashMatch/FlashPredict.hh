@@ -66,6 +66,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <sstream>
 
 class FlashPredict;
 class FlashPredict : public art::EDProducer {
@@ -176,7 +177,10 @@ private:
   // std::vector<double> fPMTChannelCorrection;
 
   unsigned fPeakCounter = 0;
-  std::vector<recob::OpHit>::iterator fOpH_beg, fOpH_end;
+  using OpHitIt = std::vector<recob::OpHit>::iterator;
+  OpHitIt fOpH_beg, fOpH_end;
+  std::vector<std::pair<OpHitIt, OpHitIt>> fOpHitsInFlashes;
+
   const art::ServiceHandle<geo::Geometry> geometry;
 
   // root stuff

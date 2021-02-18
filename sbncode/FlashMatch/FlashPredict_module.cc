@@ -386,6 +386,16 @@ void FlashPredict::produce(art::Event & e)
     }
 
     if(computeScore(tpcWithHits, pfpPDGC)){
+      // if(_score > 20. && fPeakCounter < chargeDigestMap.size()){
+      //   mf::LogWarning("FlashPredict")
+      //     << "Poor match, attempt to find a better match"
+      //     << "\nscore:        " << _score
+      //     << "\nfPeakCounter: " << fPeakCounter
+      //     << "\nslices:       " << _slices;
+      //   findMaxPeak(opHits);
+      //   computeFlashMetrics(tpcWithHits);
+      //   computeScore(tpcWithHits, pfpPDGC);
+      // }
       if (fMakeTree) {_flashmatch_nuslice_tree->Fill();}
       bk.scored_pfp++;
       mf::LogDebug("FlashPredict") << "Creating T0 and PFP-T0 association";
@@ -393,6 +403,15 @@ void FlashPredict::produce(art::Event & e)
       util::CreateAssn(*this, e, *T0_v, pfp_ptr, *pfp_t0_assn_v);
     }
   } // chargeDigestMap: PFparticles that pass criteria
+  if(chargeDigestMap.size() > 1){
+    std::stringstream out;
+    out << "mapSize: " << chargeDigestMap.size() << "\n";
+    for(auto& cs : chargeDigestMap) {
+      out << "    total charge:  " << cs.first
+          << "\t  PDG: " << cs.second.pfpPDGC << "\n";
+    }
+    mf::LogInfo("FlashPredict") << out.str();
+  }
   bk.events_processed++;
   updateBookKeeping();
 
@@ -1141,6 +1160,7 @@ bool FlashPredict::findMaxPeak(std::vector<recob::OpHit>& opHits)
   if (fOpHitsTimeHist->Integral(lowedge_bin, highedge_bin) < fMinFlashPE){
     return false;
   }
+  // this assumes the peaks do not overlap in time
   for(int i=lowedge_bin; i<highedge_bin; ++i){// clear this peak
     fOpHitsTimeHist->SetBinContent(i, 0.);
   }
@@ -1152,6 +1172,7 @@ bool FlashPredict::findMaxPeak(std::vector<recob::OpHit>& opHits)
   fOpH_beg = (fPeakCounter > 0) ? fOpH_end : opHits.begin();
   fOpH_end = std::partition(fOpH_beg, opHits.end(),
                             peakInsideEdges);
+  fOpHitsInFlashes.push_back({fOpH_beg, fOpH_end});
   fPeakCounter++;
   return true;
 }
