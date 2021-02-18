@@ -607,6 +607,38 @@ void FlashPredict::loadMetrics()
       peF.max = peF.f->GetMaximum(0., fDriftDistance, kEps);
       s++;
     }
+
+    // // Zip the vectors together
+    // std::vector<std::pair<double,double>> zipped;
+    // auto incr = [&](const auto& a, const auto& b)->bool
+    //   {return a.second < b.second;};
+    // // auto xL = x;
+    // zip(xL, yL, zipped);
+    // std::sort(std::begin(zipped), std::end(zipped), incr);
+    // unzip(zipped, xL, yL);
+    // for(size_t i=0; i<yL.size(); i++){
+    //   std::cout << yL[i] << "   \t" << xL[i] << "\n";
+    // }
+    // std::cout << std::endl;
+    // pe_l_InvSpl = TSpline3("pe_l_InvSpl", yL.data(), xL.data(), yL.size());
+    // auto xM = x;
+    // zip(xM, yM, zipped);
+    // std::sort(std::begin(zipped), std::end(zipped), incr);
+    // unzip(zipped, xM, yM);
+    // for(size_t i=0; i<yM.size(); i++){
+    //   std::cout << yM[i] << "   \t" << xM[i] << "\n";
+    // }
+    // std::cout << std::endl;
+    // pe_m_InvSpl = TSpline3("pe_m_InvSpl", yM.data(), xM.data(), yM.size());
+    // auto xH = x;
+    // zip(xH, yH, zipped);
+    // std::sort(std::begin(zipped), std::end(zipped), incr);
+    // unzip(zipped, xH, yH);
+    // for(size_t i=0; i<yH.size(); i++){
+    //   std::cout << yH[i] << "   \t" << xH[i] << "\n";
+    // }
+    // std::cout << std::endl;
+    // pe_h_InvSpl = TSpline3("pe_h_InvSpl", yH.data(), xH.data(), yH.size());
   }
 
   infile->Close();
